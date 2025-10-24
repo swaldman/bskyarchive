@@ -1,0 +1,25 @@
+//| mill-version: 1.0.6
+//+---------------------------------------------------------------
+
+package build
+
+import mill.*, scalalib.*
+
+object `package` extends ScalaModule:
+  override def scalaVersion = "3.3.4"
+
+  override def scalacOptions = Seq("-deprecation")
+
+  override def mvnDeps = Seq(
+    mvn"com.lihaoyi::os-lib:0.11.3",
+    mvn"com.lihaoyi::upickle:4.0.2",
+    mvn"com.lihaoyi::mainargs:0.7.6",
+    mvn"com.upokecenter:cbor:4.5.5",
+    mvn"commons-codec:commons-codec:1.16.0",
+  )
+
+  object test extends ScalaTests:
+    override def mvnDeps = Seq(
+      mvn"com.lihaoyi::utest:0.8.4"
+    )
+    override def testFramework = "utest.runner.Framework"
