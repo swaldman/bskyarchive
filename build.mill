@@ -4,8 +4,6 @@
 package build
 
 import mill.*, scalalib.*, publish.*
-import mill.javalib.publish.{Developer,License,PomSettings,VersionControl}
-
 
 object `package` extends ScalaModule with SonatypeCentralPublishModule:
   override def scalaVersion = "3.3.6"
