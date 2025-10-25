@@ -2,11 +2,11 @@ package com.mchange.bskyarchive
 
 import java.io.InputStream
 
-class CachingBskyRepo( is : InputStream  ) extends AbstractBskyRepo(is):
+class CachingBskyRepoReader( is : InputStream  ) extends AbstractBskyRepoReader(is):
   override val blocks : LazyList[CarBlock] =
     def next : LazyList[CarBlock] =
-      parseBlock match
+      CarBlock.read(is) match
         case Some( carBlock ) => carBlock #:: next
-        case None             => LazyList.empty
+        case None => LazyList.empty
     next
 
