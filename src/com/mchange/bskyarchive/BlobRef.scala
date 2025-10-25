@@ -46,21 +46,6 @@ object BlobRef:
           println(s"  Warning: Failed to parse blob ref: ${e.getMessage}")
           None
 case class BlobRef( cid: Cid, size: Long, mimeType: String ):
-  lazy val simpleFileName =
-    val cidBase32 = cid.toMultibaseCidBase32
-    // Construct URL (Bluesky format)
-    mimeType match
-      case m if m.startsWith("video/") =>
-        // Videos use video.bsky.app with HLS playlist
-        s"$cidBase32.m3u8"
-      case m if m.contains("jpeg") || m.contains("jpg") =>
-        s"$cidBase32.jpg"
-      case m if m.contains("png") =>
-        s"$cidBase32.png"
-      case m if m.contains("webp") =>
-        s"$cidBase32.webp"
-      case _ =>
-        s"$cidBase32.jpeg"
   def toBskyUrl( did : String ) =
     val cidBase32 = cid.toMultibaseCidBase32
     // Construct URL (Bluesky format)

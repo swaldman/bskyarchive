@@ -10,12 +10,13 @@ object BskyArchive:
   trait Navigator extends AutoCloseable:
     def getBlock( cid : Cid ) : Option[CarBlock]
 class BskyArchive( path : os.Path ):
-  val ( header, commits, offsetMap ) : (CarHeader, List[CarBlock.Commit], Map[String,Long]) =
+  val ( header, commits, offsetMap, profile ) : (CarHeader, List[CarBlock.Commit], Map[String,Long], CarBlock.Record) =
     Using.resource(new RandomAccessFile(path.toIO, "r")): raf =>
       Using.resource(new BufferedInputStream( new FileInputStream( raf.getFD() ) ) ): is =>
         Using.resource(BskyRepoReader(is)): repo =>
           val h = repo.header
           var cs : List[CarBlock.Commit] = Nil
+          var p : CarBlock.Record = null
           val mapBuider = Map.newBuilder[String,Long]
           var offset = raf.getFilePointer()
           while repo.blocks.hasNext do
@@ -23,14 +24,21 @@ class BskyArchive( path : os.Path ):
             block match
               case commit : CarBlock.Commit =>
                 cs = commit :: cs
+              case rec : CarBlock.Record if rec.`type` == "app.bsky.actor.profile" =>
+                if p != null then
+                  throw new BadBskyRepo(s"Duplicate profile records! $p $rec")
+                p = rec  
               case _ =>
                 /* ignore */
             mapBuider += Tuple2( block.cid.toMultibaseCidBase32, offset )
             offset = raf.getFilePointer()
-          (h, cs, mapBuider.result())
+          (h, cs, mapBuider.result(), p)
 
   if commits.isEmpty then
     throw new BadBskyRepo("No commit records found in repo, can't identify did (distributed id).")
+
+  if profile == null then
+    throw new BadBskyRepo("No profile found in repo!")
 
   val did = commits.head.did
 
