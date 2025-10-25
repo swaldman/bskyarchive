@@ -3,10 +3,12 @@
 
 package build
 
-import mill.*, scalalib.*
+import mill.*, scalalib.*, publish.*
+import mill.javalib.publish.{Developer,License,PomSettings,VersionControl}
 
-object `package` extends ScalaModule:
-  override def scalaVersion = "3.3.4"
+
+object `package` extends ScalaModule with SonatypeCentralPublishModule:
+  override def scalaVersion = "3.3.6"
 
   override def scalacOptions = Seq("-deprecation")
 
@@ -17,6 +19,21 @@ object `package` extends ScalaModule:
     mvn"com.upokecenter:cbor:4.5.5",
     mvn"commons-codec:commons-codec:1.16.0",
   )
+
+  private def pomSettings(name: String) = PomSettings(
+    description = "Utilities for parsing and working with BlueSky repo.car archives.",
+    organization = "com.mchange",
+    url = "https://github.com/swaldman/unstatic",
+    licenses = Seq(License.`Apache-2.0`),
+    versionControl = VersionControl.github("swaldman", name),
+    developers = Seq(
+      Developer("swaldman", "Steve Waldman", "https://github.com/swaldman")
+    )
+  )
+
+  override def publishVersion = Task {"0.0.1-SNAPSHOT"}
+  override def pomSettings    = Task {pomSettings(artifactName())}
+  override def artifactName   = Task {"bskyarchive"}
 
   object test extends ScalaTests:
     override def mvnDeps = Seq(
