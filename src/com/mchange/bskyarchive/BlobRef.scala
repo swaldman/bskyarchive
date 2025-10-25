@@ -46,13 +46,33 @@ object BlobRef:
           println(s"  Warning: Failed to parse blob ref: ${e.getMessage}")
           None
 case class BlobRef( cid: Cid, size: Long, mimeType: String ):
+  lazy val simpleFileName =
+    val cidBase32 = cid.toMultibaseCidBase32
+    // Construct URL (Bluesky format)
+    mimeType match
+      case m if m.startsWith("video/") =>
+        // Videos use video.bsky.app with HLS playlist
+        s"$cidBase32.m3u8"
+      case m if m.contains("jpeg") || m.contains("jpg") =>
+        s"$cidBase32.jpg"
+      case m if m.contains("png") =>
+        s"$cidBase32.png"
+      case m if m.contains("webp") =>
+        s"$cidBase32.webp"
+      case _ =>
+        s"$cidBase32.jpeg"
   def toBskyUrl( did : String ) =
     val cidBase32 = cid.toMultibaseCidBase32
-    // Construct CDN URL (Bluesky format)
-    val (cdnPath, extension) = mimeType match
-      case m if m.contains("jpeg") || m.contains("jpg") => ("img/feed_fullsize", "jpeg")
-      case m if m.contains("png") => ("img/feed_fullsize", "png")
-      case m if m.contains("webp") => ("img/feed_fullsize", "webp")
-      case m if m.contains("video/mp4") => ("vid", "mp4")
-      case _ => ("img/feed_fullsize", "jpeg")
-    s"https://cdn.bsky.app/$cdnPath/plain/$did/$cidBase32@$extension"
+    // Construct URL (Bluesky format)
+    mimeType match
+      case m if m.startsWith("video/") =>
+        // Videos use video.bsky.app with HLS playlist
+        s"https://video.bsky.app/watch/$did/$cidBase32/playlist.m3u8"
+      case m if m.contains("jpeg") || m.contains("jpg") =>
+        s"https://cdn.bsky.app/img/feed_fullsize/plain/$did/$cidBase32@jpeg"
+      case m if m.contains("png") =>
+        s"https://cdn.bsky.app/img/feed_fullsize/plain/$did/$cidBase32@png"
+      case m if m.contains("webp") =>
+        s"https://cdn.bsky.app/img/feed_fullsize/plain/$did/$cidBase32@webp"
+      case _ =>
+        s"https://cdn.bsky.app/img/feed_fullsize/plain/$did/$cidBase32@jpeg"
