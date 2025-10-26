@@ -11,7 +11,8 @@ object CarBlock:
   case class Commit(cid  : Cid, cbor : CBORObject) extends CarBlock:
     lazy val did = cbor.get("did").AsString()
     lazy val rev = cbor.get("rev").AsString().toInt
-  case class Node(cid  : Cid, cbor : CBORObject) extends CarBlock
+  case class Node(cid  : Cid, cbor : CBORObject) extends CarBlock:
+    lazy val mst = MstNode.fromCBOR(cbor)
   case class Record(cid  : Cid, cbor : CBORObject) extends CarBlock:
     lazy val `type` = cbor.get("$type").AsString()
     lazy val createdAt : Instant = parseDateTime( cbor.get("createdAt").AsString() )

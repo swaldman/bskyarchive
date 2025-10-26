@@ -27,7 +27,7 @@ class BskyArchive( path : os.Path ):
               case rec : CarBlock.Record if rec.`type` == "app.bsky.actor.profile" =>
                 if p != null then
                   throw new BadBskyRepo(s"Duplicate profile records! $p $rec")
-                p = rec  
+                p = rec
               case _ =>
                 /* ignore */
             mapBuider += Tuple2( block.cid.toMultibaseCidBase32, offset )
@@ -41,6 +41,24 @@ class BskyArchive( path : os.Path ):
     throw new BadBskyRepo("No profile found in repo!")
 
   val did = commits.head.did
+
+  /**
+   * Build a map from record CID to TID (record key) by parsing all MST nodes.
+   */
+  lazy val tidMap: Map[Cid, String] =
+    val builder = Map.newBuilder[Cid, String]
+    Using.resource(new BufferedInputStream(os.read.inputStream(path))): is =>
+      Using.resource(new BskyRepoReader(is)): brr =>
+        brr.blocks.foreach:
+          case node: CarBlock.Node =>
+            // Extract all TID -> CID mappings from this MST node
+            node.mst.entries.foreach { case (tid, entry) =>
+              builder += (entry.value -> tid)
+            }
+          case _ =>
+            // Not an MST node, skip
+            ()
+    builder.result()
 
   def newNavigator() : BskyArchive.Navigator = new BskyArchive.Navigator:
     val raf = new RandomAccessFile(path.toIO, "r")
@@ -75,3 +93,16 @@ class BskyArchive( path : os.Path ):
   def posts() : Seq[CarBlock.Record] = recordsbyType("app.bsky.feed.post")
 
   def allImageUrls() : Set[String] = posts().flatMap( _.blobRefs ).filter( _.mimeType.startsWith("image") ).map( _.toBskyUrl(did) ).toSet
+
+  /**
+   * Get the TID (record key) for a given record CID.
+   * Returns None if the CID is not found in any MST node.
+   */
+  def getTid(recordCid: Cid): Option[String] =
+    tidMap.get(recordCid)
+
+  /**
+   * Get the TID for a record.
+   */
+  def getTid(record: CarBlock.Record): Option[String] =
+    getTid(record.cid)
