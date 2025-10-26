@@ -22,6 +22,11 @@ object CarBlock:
         Some( cbor.get("text").AsString() )
       else
         None
+    lazy val reply : Option[Reply] =
+      if cbor.ContainsKey("reply") then
+        Some(Reply.fromCBOR(cbor.get("reply")))
+      else
+        None
     lazy val blobRefs : Seq[BlobRef] =
       val buffer = scala.collection.mutable.ArrayBuffer[BlobRef]()
 
@@ -46,6 +51,7 @@ object CarBlock:
 
       scan(cbor)
       buffer.toSeq
+      
 
   /*
    * Parse a single block from the CAR file.

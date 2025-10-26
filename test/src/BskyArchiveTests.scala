@@ -127,4 +127,32 @@ object BskyArchiveTests extends TestSuite:
       val key2 = entry2.reconstructKey(key1)
       assert(new String(key2, "UTF-8") == "3jzabc123xyz")
     }
+
+    test("PostReference structure") {
+      import com.mchange.bskyarchive.{PostReference, Cid}
+
+      val cid = Cid(1, 0x71, 0x12, Array[Byte](1, 2, 3, 4))
+      val uri = "at://did:plc:example123/app.bsky.feed.post/3jzfcijpj2z2a"
+
+      val ref = PostReference(cid, uri)
+      assert(ref.atUri == uri)
+      assert(ref.cid == cid)
+      assert(ref.toString.contains(uri))
+    }
+
+    test("Reply structure") {
+      import com.mchange.bskyarchive.{Reply, PostReference, Cid}
+
+      val rootCid = Cid(1, 0x71, 0x12, Array[Byte](1, 2, 3, 4))
+      val parentCid = Cid(1, 0x71, 0x12, Array[Byte](5, 6, 7, 8))
+
+      val root = PostReference(rootCid, "at://did:plc:root/app.bsky.feed.post/3k43tv4rft22g")
+      val parent = PostReference(parentCid, "at://did:plc:parent/app.bsky.feed.post/3k44uw5sgu33h")
+
+      val reply = Reply(root, parent)
+      assert(reply.root == root)
+      assert(reply.parent == parent)
+      assert(reply.toString.contains(root.atUri))
+      assert(reply.toString.contains(parent.atUri))
+    }
   }
