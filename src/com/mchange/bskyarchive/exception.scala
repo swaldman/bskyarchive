@@ -4,4 +4,5 @@ class BskyArchiveException( message : String, cause : Throwable = null ) extends
 
 final class BadBskyRepo( message : String, cause : Throwable = null ) extends BskyArchiveException( message, cause )
 final class UnexpectedRecordType( message : String, cause : Throwable = null ) extends BskyArchiveException( message, cause )
+final class UnparsableEmbed( message : String, cause : Throwable = null ) extends BskyArchiveException( message, cause )
 

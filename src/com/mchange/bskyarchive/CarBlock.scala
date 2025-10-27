@@ -17,6 +17,7 @@ object CarBlock:
     lazy val `type` = cbor.get("$type").AsString()
     lazy val createdAt : Instant = parseDateTime( cbor.get("createdAt").AsString() )
     lazy val facets = Facet.allFromRecord(cbor)
+    lazy val embed : Option[Embed] = Embed.forRecord(cbor) 
     lazy val text : Option[String] =
       if cbor.ContainsKey("text") then
         Some( cbor.get("text").AsString() )

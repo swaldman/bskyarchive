@@ -38,7 +38,7 @@ import com.upokecenter.cbor.CBORObject
  * See https://atproto.com/specs/lexicon
  */
 case class PostReference( cid : Cid, atUri : String ):
-  override def toString: String = s"PostReference($atUri, ${cid.toMultibaseCidBase32})"
+  override def toString: String = s"PostReference(cid=${cid.toMultibaseCidBase32}, atUri=${atUri})"
 
 object PostReference:
   def fromCBOR(cbor: CBORObject): PostReference =
@@ -72,3 +72,26 @@ object Reply:
     val root = PostReference.fromCBOR(cbor.get("root"))
     val parent = PostReference.fromCBOR(cbor.get("parent"))
     Reply(root, parent)
+
+case class AspectRatio( width : Int, height : Int )
+
+object AspectRatio:
+  def fromCBOR(cbor: CBORObject): AspectRatio =
+    val width = cbor.get("width").AsInt32Value()
+    val height = cbor.get("height").AsInt32Value()
+    AspectRatio(width, height)
+
+case class ImageRef( image : BlobRef, alt : Option[String], aspectRatio : Option[AspectRatio] )
+
+object ImageRef:
+  def fromCBOR(cbor: CBORObject): ImageRef =
+    val image = BlobRef.fromCBORMap(cbor.get("image")).get
+    val alt = 
+      val raw = cbor.get("alt").AsString()
+      if raw.trim.isEmpty then None else Some( raw )
+    val aspectRatio = if cbor.ContainsKey("aspectRatio") then
+      Some(AspectRatio.fromCBOR(cbor.get("aspectRatio")))
+    else
+      None
+    ImageRef(image, alt, aspectRatio)
+
