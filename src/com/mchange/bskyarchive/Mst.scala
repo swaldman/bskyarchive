@@ -12,6 +12,30 @@ import com.upokecenter.cbor.CBORObject
  */
 
 /**
+ * Helper to extract CID from CBOR object, handling both tagged and untagged formats.
+ */
+private def extractCid(cborObj: CBORObject): Cid =
+  // CIDs can be encoded in multiple ways:
+  // 1. CBOR tag 42 with byte string
+  // 2. Raw byte string
+  // 3. Text string (base32/base58 encoded)
+
+  val objType = cborObj.getType()
+
+  if objType == com.upokecenter.cbor.CBORType.ByteString then
+    // Raw byte string (may or may not have tag 42)
+    val cidBytes = cborObj.GetByteString()
+    Cid.readBinary(cidBytes)
+  else if objType == com.upokecenter.cbor.CBORType.TextString then
+    // Text string - this shouldn't happen for CIDs in MST, but handle it gracefully
+    throw new IllegalStateException(s"Unexpected text string CID in MST: ${cborObj.AsString()}")
+  else
+    // Unknown type - provide helpful error
+    throw new IllegalStateException(
+      s"Unexpected CBOR type for CID: ${objType}, hasTag42=${cborObj.HasTag(42)}, value=${cborObj.ToJSONString()}"
+    )
+
+/**
  * A single entry in an MST node.
  *
  * @param prefixLen Number of bytes shared with the previous entry's key (0 for first entry)
@@ -46,12 +70,16 @@ object MstEntry:
     val p = cbor.get("p").AsInt32Value()
     val k = cbor.get("k").GetByteString()
 
-    // Value is a CID (CBOR tag 42)
-    val vCid = Cid.readBinary(cbor.get("v").GetByteString())
+    // Value is a CID (may be CBOR tag 42 or raw bytes)
+    val vCid = extractCid(cbor.get("v"))
 
-    // Tree is optional
+    // Tree is optional and may be null
     val t = if cbor.ContainsKey("t") then
-      Some(Cid.readBinary(cbor.get("t").GetByteString()))
+      val tObj = cbor.get("t")
+      if tObj.isNull() then
+        None
+      else
+        Some(extractCid(tObj))
     else
       None
 
@@ -102,7 +130,12 @@ object MstNode:
   def fromCBOR(cbor: CBORObject): MstNode =
     // Parse optional left link
     val leftLink = if cbor.ContainsKey("l") then
-      Some(Cid.readBinary(cbor.get("l").GetByteString()))
+      val lObj = cbor.get("l")
+      // Check if it's null (CBOR SimpleValue)
+      if lObj.isNull() then
+        None
+      else
+        Some(extractCid(lObj))
     else
       None
 

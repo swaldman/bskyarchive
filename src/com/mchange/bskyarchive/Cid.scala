@@ -9,6 +9,22 @@ import org.apache.commons.codec.binary.Base32
   */
 object Cid:
   /**
+   * Parse a CID from a multibase base32 string (e.g., "bafyrei...").
+   */
+  def fromMultibaseCidBase32(s: String): Cid =
+    require(s.length > 0 && s.charAt(0) == 'b', s"Invalid multibase CID: must start with 'b', got: $s")
+
+    // Remove the 'b' prefix
+    val base32Str = s.substring(1)
+
+    // Decode from base32
+    val base32 = new Base32()
+    val bytes = base32.decode(base32Str.toUpperCase)
+
+    // Parse the CID from the decoded bytes
+    val (cid, _) = readBinary(ByteArrayInputStream(bytes))
+    cid
+  /**
    * Parse a CID from an InputStream.
    * Returns the CID and the number of bytes consumed.
    */

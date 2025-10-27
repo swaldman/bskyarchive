@@ -43,8 +43,21 @@ case class PostReference( cid : Cid, atUri : String ):
 object PostReference:
   def fromCBOR(cbor: CBORObject): PostReference =
     val uri = cbor.get("uri").AsString()
-    val cidBytes = cbor.get("cid").GetByteString()
-    val cid = Cid.readBinary(cidBytes)
+    val cidObj = cbor.get("cid")
+
+    // Handle various CID encoding formats
+    val cid = cidObj.getType() match
+      case com.upokecenter.cbor.CBORType.ByteString =>
+        // Raw byte string (may or may not have tag 42)
+        Cid.readBinary(cidObj.GetByteString())
+      case com.upokecenter.cbor.CBORType.TextString =>
+        // Multibase base32 encoded CID string (e.g., "bafyrei...")
+        Cid.fromMultibaseCidBase32(cidObj.AsString())
+      case _ =>
+        throw new IllegalStateException(
+          s"Unexpected CBOR type for CID in PostReference: ${cidObj.getType()}, hasTag42=${cidObj.HasTag(42)}, value=${cidObj.ToJSONString()}"
+        )
+
     PostReference(cid, uri)
 
 /**

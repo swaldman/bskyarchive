@@ -155,4 +155,25 @@ object BskyArchiveTests extends TestSuite:
       assert(reply.toString.contains(root.atUri))
       assert(reply.toString.contains(parent.atUri))
     }
+
+    test("CID multibase base32 round-trip") {
+      import com.mchange.bskyarchive.Cid
+
+      // Create a CID
+      val original = Cid(1, 0x71, 0x12, Array[Byte](1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16))
+
+      // Convert to base32 string
+      val base32Str = original.toMultibaseCidBase32
+      assert(base32Str.startsWith("b"))
+
+      // Parse back from base32 string
+      val parsed = Cid.fromMultibaseCidBase32(base32Str)
+
+      // Should be equal
+      assert(parsed == original)
+      assert(parsed.version == original.version)
+      assert(parsed.codec == original.codec)
+      assert(parsed.hashAlgorithm == original.hashAlgorithm)
+      assert(java.util.Arrays.equals(parsed.hashDigest, original.hashDigest))
+    }
   }
