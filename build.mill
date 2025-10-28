@@ -29,7 +29,7 @@ object `package` extends ScalaModule with SonatypeCentralPublishModule:
     )
   )
 
-  override def publishVersion = Task {"0.0.1-SNAPSHOT"}
+  override def publishVersion = Task {"0.0.1"}
   override def pomSettings    = Task {pomSettings(artifactName())}
   override def artifactName   = Task {"bskyarchive"}
 
